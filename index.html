@@ -1,0 +1,508 @@
+<!doctype html>
+	<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<title>ToDoList</title>
+		<style>
+			*{
+				margin:0;
+				padding:0;
+				font-family:"Microsoft Yahei";
+			}
+			body{
+				background:#eee;
+			}
+			.todolist{
+				width:100%;
+			}
+			.head{
+				width:100%;
+				background:#000;
+			}
+			.contentC{
+				width:600px;
+				height:50px;
+				margin:0 auto;
+			}
+			.headContent h2{
+				float:left;
+				color:#fff;
+				margin-top:10px;
+			}
+			.headContent input{
+				float:right;
+				width:350px;
+				height:26px;
+				padding-left:10px;
+				margin-top:10px;
+				border-radius:10px;
+				outline:none;
+			}
+			.content,.proceed,.finifh{
+				width:100%;
+			}
+			.tips{
+				width:100%;
+			    min-height:50px;
+				padding-top:15px;
+				//border: 1px solid #000;
+			}
+			.tips h2{
+				float:left;
+				font-weight:normal;
+			}
+			.num{
+				float:right;
+				width: 30px;
+				height: 25px;
+				padding-top:5px;
+				border-radius:50%;
+				background:#fff;
+				text-align:center;
+				color:#000;
+			}
+			.showList{
+				width:590px;
+				background:#fff;
+				padding:5px 10px;
+				margin-top:20px;
+				position:relative;
+				overflow:hidden;
+				border-radius:10px;
+			}
+			.ck input{
+				width:20px;
+				height: 20px;
+
+			}
+			.showOne{
+				width:100%;
+				height:20px;
+				//border: 1px solid #000;
+				
+			}
+			.ck{
+				display:inline-block;
+			}
+			.thing{
+				//font-family:"Tahoma";
+				width:550px;
+				height:20px;
+				//border: 1px solid #000;
+				display:inline-block;
+				overflow:hidden;
+				//white-space: nowrap;
+				text-overflow:ellipsis;
+				
+			}
+			
+			.time{
+				margin-left:400px;
+			}
+			.end{
+				position:absolute;
+				top:0;
+				right:10px;
+				//float:right;
+				cursor:pointer;
+			}
+			.update{
+				//display:inline-block;
+				position:absolute;
+				top:5px;
+				left:30px;
+				width:550px;
+				display:none;
+				//overflow:hidden;
+				//text-overflow:ellipsis;
+			}	
+		</style> 
+	</head>
+	<body>
+		<div class="todolist">
+			<div class="head">
+				<div class="headContent contentC">
+					<h2>ToDoList</h2>
+					<input type="text" placeholder="添加ToDo" id="text">
+				</div>
+			</div>
+			<div class="content">
+				<div class="contentC">
+					<div class="proceed">
+						<div class="tips">
+							<h2>正在进行</h2>
+							<div class="num">0</div>
+						</div>
+<!-- 						<div class="showList">
+	<div class="showOne">
+		<p class="ck">
+			<input type="checkbox">
+		</p>
+		<p class="thing" title="aasd">aasaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaada</p>
+	</div>
+	<p class="time">asdasd</p>
+	<p class="end">&times;</p>
+
+	<input type="text" class="update">
+	
+	
+</div> -->
+					</div>
+					<div class="finish">
+						<div class="tips">
+							<h2>已经完成</h2>
+							<div class="num">0</div>
+						</div>
+					</div>
+				</div>
+			</div>
+			
+		</div>
+		
+	</body>
+	<script>
+	//alrt("asa")
+	//创建、连接数据库
+	var db=openDatabase("dolist","1.0","事情表",1024*1024);
+	//创建表
+	db.createTable=function(){
+		//console.log("aaa");
+		//proceed表
+		db.transaction(function(tx){
+			tx.executeSql("create table if not exists msg(thing,time)",[],function(tx,result){
+				//console.log("aaa1");
+			},function(tx,error){
+				//console.log("aaa2");
+			});
+		})
+		//finish表
+		db.transaction(function(tx){
+			tx.executeSql("create table if not exists finish(thing,time)");
+		})
+	}
+	db.createTable();
+	//遍历数据库中表的数据
+	db.eachThing=function(table,parent){
+		//console.log("jinlaile")
+		db.transaction(function(tx){
+			tx.executeSql("select * from "+table+"",[],function(tx,result){
+				console.log(result.rows.length)
+				for(var i=0;i<result.rows.length;i++){
+					//创建div
+					textValue=result.rows[i].thing;
+					//console.log(textValue)
+					time=result.rows[i].time;
+					//console.log(time)
+					createDiv(textValue,time,parent)
+					//添加checkbox的点击事件
+
+					//为叉添加点击事件
+			
+					//localStorage.setItem("")
+					checkMove();
+					//设置title、显示条数、添加双击与修改事件
+					
+					setTitle(parent);
+					setAll();
+					
+					//改条数
+					
+									
+				}
+			},function(tx,error){
+				console.log("查询失败")
+			})
+		})
+	}
+	db.eachThing("msg","proceed");
+	db.eachThing("finish","finish");
+	//向msg表中添加数据
+	db.insert=function(th,ti){
+		//console.log("bbb");
+		db.transaction(function(tx){
+			tx.executeSql("insert into msg(thing,time) values(?,?)",[th,ti]);
+		})
+	}
+	db.insertFin=function(th,ti){
+		//console.log("bbb");
+		db.transaction(function(tx){
+			tx.executeSql("insert into finish(thing,time) values(?,?)",[th,ti]);
+		})
+	}
+	//修改msg表中数据
+	db.update=function(th,ti,ti2){
+		db.transaction(function(tx){
+			tx.executeSql("update msg set  time=?,thing=? where time=?",[th,ti,ti2],function(tx,result){
+				//console.log("修改成功");
+			},function(tx,error){
+				//console.log("修改失败");
+			})
+		})
+	}
+	db.updateFin=function(th,ti,ti2){
+		db.transaction(function(tx){
+			tx.executeSql("update finish set  time=?,thing=? where time=?",[th,ti,ti2],function(tx,result){
+				//console.log("修改成功");
+			},function(tx,error){
+				//console.log("修改失败");
+			})
+		})
+	}
+
+	//删除msg表中数据
+	db.deleteThing=function(ti){
+		db.transaction(function(tx){
+			tx.executeSql("delete from msg where time=?",[ti])
+		})
+	}
+	db.deleteFin=function(ti){
+		db.transaction(function(tx){
+			tx.executeSql("delete from finish where time=?",[ti])
+		})
+	}
+	//db.insert();
+	//finish表中添加数据
+
+	//删除表
+	db.deletep=function(){
+		//console.log("ccc");
+		db.transaction(function(tx){
+			tx.executeSql("drop table msg")
+		})
+	}
+	db.deletef=function(){
+		//console.log("ccc");
+		db.transaction(function(tx){
+			tx.executeSql("drop table finish")
+		})
+	}
+
+	//db.deletep();
+	//db.deletef();
+
+	//createTable();
+	//insertProceed();
+
+
+	//
+	var text=document.getElementById("text");
+	var proceed=document.getElementsByClassName("proceed")[0];
+	var finish=document.getElementsByClassName("finish")[0];
+	var num=document.getElementsByClassName("num")[0];
+	var num2=document.getElementsByClassName("num")[1];
+	var allNum=0;
+	var timeNow;
+	//设置两位数的显示时间
+	function double(who){
+		//console.log(who)
+		if(who>=1&&who<10){
+			who="0"+who;
+		}
+		return who;
+		//console.log(who)
+
+	}
+	//获取当前时间
+	function nowTime(){
+		date=new Date();
+		year=date.getFullYear();
+		month=date.getMonth();
+		day=date.getDate();
+		hour=date.getHours();
+		min=date.getMinutes();
+		sen=date.getSeconds();
+		month=double(month);
+		day=double(day);
+		hour=double(hour);
+		min=double(min);
+		sen=double(sen);
+		timeNow=year+"-"+month+"-"+day+"   "+hour+":"+min+":"+sen;
+	}
+	//创建div
+	function createDiv(value,time,who){
+		div=document.createElement("div");
+		div.className="showList";
+		div.innerHTML="<div class='showOne'>"+"<p class='ck'>"+"<input type='checkbox' class='ckBox'>"+"</p>"+"<p class='thing'>"+value+"</p>"+"</div>"+
+		"<p class='time'>"+time+"</p>"+"<p class='end'>"+"&times;"+"</p>"+
+		"<input type='text' class='update'>";
+		//添加到父元素中
+		if(who=="proceed"){
+			proceed.appendChild(div);
+		}else{
+			finish.appendChild(div);
+			div.style.backgroundColor="#8c8c8c";
+			div.style.color="#fff";
+			input=div.getElementsByTagName("input")[0];
+			input.checked="checked";
+		}
+		
+	}
+	//设置title和条数
+	function setTitle(who){
+		if(who=="proceed"){
+			thing=proceed.getElementsByClassName("thing");
+			newNum=thing.length;
+			num.innerHTML=newNum;
+		}else{
+			thing=finish.getElementsByClassName("thing");
+			newNum=thing.length;
+			num2.innerHTML=newNum;
+		}
+		for(var i=0;i<thing.length;i++){
+			thingValue=thing[i].innerHTML;
+			//alert(thing.length)
+			thing[i].setAttribute("title",thingValue);
+		}
+	}
+	//添加双击事件和修改事件
+	function setAll(){
+		allThing=document.getElementsByClassName("thing");
+		allupdate=document.getElementsByClassName("update");
+		//给所有的事情添加一个点击（双击）时间
+		for(var i=0;i<allThing.length;i++){
+			allThing[i].addEventListener("click",allClick,false);
+		}
+		//给所有的修改文本框添加一个失去焦点事件
+		for(var i=0;i<allupdate.length;i++){
+			allupdate[i].addEventListener("blur",allBlur,false);
+		}
+		
+	}
+	//添加checkbox点击与移除节点功能
+	function checkMove(){
+				//添加checkbox的点击事件
+		checkbox=document.getElementsByClassName("ckBox");
+		for(var i=0;i<checkbox.length;i++){
+			checkbox[i].addEventListener("click",ckClick,false);
+		}
+		//为叉添加点击事件
+		end=document.getElementsByClassName("end");
+		for(var i=0;i<end.length;i++){
+			end[i].addEventListener("click",remove,false);
+		}
+	}
+
+	//文本框获取焦点的时候
+/*	text.addEventListener("focus",txt,false);
+	function txt(){
+		//console.log(text.innerHTML)
+		text.value="";
+	}*/
+		text.onkeydown=function(e){
+			e=e || window.event;
+			//alert(e.keyCode);
+			if(e.keyCode==13){
+				//获取输入值
+				textValue=text.value;
+				//清空
+				text.value="";
+				//alert(textValue)
+				if(textValue!=""&&textValue!=undefined){
+					//获取当前时间
+					nowTime();
+					//创建div
+					createDiv(textValue,timeNow,"proceed")
+					//添加数据到本地数据库
+					db.insert(textValue,timeNow);
+				
+					//localStorage.setItem("")
+					//checkbox点击事件、end点击
+					checkMove();
+					//改条数、设置title
+					setTitle("proceed");
+					//添加点击/修改事件
+					setAll()					
+				}else{
+					alert("请输入字段");
+				}
+				
+				
+				
+
+						//alert(val);
+			}
+		}
+		function ckClick(){
+			//alert("asd")
+			if(this.checked==true){
+				value=this.parentNode.nextSibling.innerHTML;
+				time=this.parentNode.parentNode.nextSibling.innerHTML;
+				nowTime();
+				this.parentNode.parentNode.nextSibling.innerHTML=timeNow;
+				finish.appendChild(this.parentNode.parentNode.parentNode);
+				this.parentNode.parentNode.parentNode.style.backgroundColor="#8c8c8c";
+				this.parentNode.parentNode.parentNode.style.color="#fff";
+				db.insertFin(value,timeNow);
+				db.deleteThing(time);
+				proNum();
+				finNum();
+			}else{
+				value=this.parentNode.nextSibling.innerHTML;
+				time=this.parentNode.parentNode.nextSibling.innerHTML;
+				nowTime();
+				this.parentNode.parentNode.nextSibling.innerHTML=timeNow;
+				proceed.appendChild(this.parentNode.parentNode.parentNode);
+				this.parentNode.parentNode.parentNode.style.backgroundColor="#fff";
+				this.parentNode.parentNode.parentNode.style.color="black";
+				db.insert(value,timeNow);
+				db.deleteFin(time);
+				proNum();
+				finNum();
+			}
+		}
+		//获取进行事件个数
+		function proNum(){
+			thing=proceed.getElementsByClassName("thing");
+			newNum=thing.length;
+			num.innerHTML=newNum;
+		}
+		//获取完成事件个数
+		function finNum(){
+			thing=finish.getElementsByClassName("thing");
+			newNum=thing.length;
+			num2.innerHTML=newNum;
+		}
+		//移除节点
+		function remove(){
+			//alert(this.innerHTML)
+			console.log("点击了叉")
+			this.parentNode.parentNode.removeChild(this.parentNode);
+			time=this.previousSibling.innerHTML;
+			db.deleteThing(time);
+			db.deleteFin(time);
+			proNum();
+			finNum();
+		}
+		//修改事情
+		function allClick(){
+			if(allNum==0){
+				allNum++;
+				return false;
+			}else{
+				node=this.parentNode.parentNode;
+				update=node.getElementsByClassName("update")[0];
+				update.style.display="inline-block";
+				value=this.innerHTML;
+				update.value=value;
+				update.focus();
+				allNum=0;
+			}
+		}
+		//文本修改框的失去焦点事件
+		function allBlur(){
+			console.log("asd");
+			value=this.value;
+			node=this.parentNode;
+			thing=node.firstChild.lastChild;
+			this.style.display="none";
+			thing.innerHTML=value;
+			oldTime=this.previousSibling.previousSibling.innerHTML;
+			//console.log(oldTime);
+			
+			//console.log(thing.innerHTML);
+			nowTime();
+			//console.log(value);
+			db.update(timeNow,value,oldTime);
+		}
+	</script>
+	</html>	
