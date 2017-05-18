@@ -295,9 +295,6 @@
 	//设置两位数的显示时间
 	function double(who){
 		//console.log(who)
-		if(who=="month"){
-			who=parseInt(who)+1;
-		}
 		if(who>=1&&who<10){
 			who="0"+who;
 		}
@@ -309,7 +306,7 @@
 	function nowTime(){
 		date=new Date();
 		year=date.getFullYear();
-		month=date.getMonth();
+		month=parseInt(date.getMonth())+1;
 		day=date.getDate();
 		hour=date.getHours();
 		min=date.getMinutes();
